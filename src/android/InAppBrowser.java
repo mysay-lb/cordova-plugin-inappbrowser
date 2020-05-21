@@ -38,6 +38,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.text.InputType;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.KeyEvent;
@@ -75,6 +76,7 @@ import org.apache.cordova.CordovaWebView;
 import org.apache.cordova.LOG;
 import org.apache.cordova.PluginManager;
 import org.apache.cordova.PluginResult;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -172,7 +174,7 @@ public class InAppBrowser extends CordovaPlugin {
             }
             final String target = t;
             final HashMap<String, String> features = parseFeature(args.optString(2));
-            final HashMap<String, String> headers = parseHeaders(args.optString(3));
+            final HashMap<String, String> headers = parseHeaders(args.optJSONArray(3));
 
             LOG.d(LOG_TAG, "target = " + target);
 
@@ -349,24 +351,25 @@ public class InAppBrowser extends CordovaPlugin {
     /**
      * Put the headers string into a hash map
      *
-     * @param headersString string of headers comma separated (key=value)
+     * @param jsonArrayHeaders array of headers
      * @return map of headers
      */
-    private HashMap<String, String> parseHeaders(String headersString) {
-        if (headersString.equals(NULL)) {
+    private HashMap<String, String> parseHeaders(JSONArray jsonArrayHeaders) {
+        if (jsonArrayHeaders.length()==0) {
             return null;
         } else {
             HashMap<String, String> map = new HashMap<String, String>();
-            StringTokenizer headers = new StringTokenizer(headersString, ",");
-            StringTokenizer header;
-            while(headers.hasMoreElements()) {
-                header = new StringTokenizer(headers.nextToken(), "=");
-                if (header.hasMoreElements()) {
-                    String key = header.nextToken().replace("@e","=").replace("@c", ",").replace("@a","@");
-                    String value = header.nextToken().replace("@e","=").replace("@c", ",").replace("@a","@");
+            for(int i = 0 ; i <jsonArrayHeaders.length() ; ++i) {
+                try {
+                    String key = ((JSONObject)jsonArrayHeaders.get(i)).get("key").toString().replace("@e","=").replace("@c", ",").replace("@a","@");
+                    String value = ((JSONObject)jsonArrayHeaders.get(i)).get("key").toString().replace("@e","=").replace("@c", ",").replace("@a","@");
                     map.put(key, value);
+                } catch (JSONException e) {
+                    e.printStackTrace();
                 }
+
             }
+
             return map;
         }
     }
@@ -1504,25 +1507,25 @@ public class InAppBrowser extends CordovaPlugin {
                 obj.put("sslerror", error.getPrimaryError());
                 String message;
                 switch (error.getPrimaryError()) {
-                case SslError.SSL_DATE_INVALID:
-                    message = "The date of the certificate is invalid";
-                    break;
-                case SslError.SSL_EXPIRED:
-                    message = "The certificate has expired";
-                    break;
-                case SslError.SSL_IDMISMATCH:
-                    message = "Hostname mismatch";
-                    break;
-                default:
-                case SslError.SSL_INVALID:
-                    message = "A generic error occurred";
-                    break;
-                case SslError.SSL_NOTYETVALID:
-                    message = "The certificate is not yet valid";
-                    break;
-                case SslError.SSL_UNTRUSTED:
-                    message = "The certificate authority is not trusted";
-                    break;
+                    case SslError.SSL_DATE_INVALID:
+                        message = "The date of the certificate is invalid";
+                        break;
+                    case SslError.SSL_EXPIRED:
+                        message = "The certificate has expired";
+                        break;
+                    case SslError.SSL_IDMISMATCH:
+                        message = "Hostname mismatch";
+                        break;
+                    default:
+                    case SslError.SSL_INVALID:
+                        message = "A generic error occurred";
+                        break;
+                    case SslError.SSL_NOTYETVALID:
+                        message = "The certificate is not yet valid";
+                        break;
+                    case SslError.SSL_UNTRUSTED:
+                        message = "The certificate authority is not trusted";
+                        break;
                 }
                 obj.put("message", message);
 
