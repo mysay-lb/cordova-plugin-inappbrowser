@@ -92,7 +92,7 @@
         }
     };
 
-    module.exports = function (strUrl, strWindowName, strWindowFeatures, windowHeaders, callbacks) {
+    module.exports = function (strUrl, strWindowName, strWindowFeatures, headers, callbacks) {
         // Don't catch calls that write to existing frames (e.g. named iframes).
         if (window.frames && window.frames[strWindowName]) {
             var origOpenFunc = modulemapper.getOriginalSymbol(window, 'open');
@@ -111,31 +111,9 @@
             iab._eventHandler(eventname);
         };
 
-        var strWindowHeaders = '';
-        		if (windowHeaders) {
-        			if (typeof windowHeaders === 'string' || windowHeaders instanceof String) {
-        				strWindowHeaders = windowHeaders.replace(/@/gi,'@a');
-        			}
-        			else {
-        				var first = true;
-        				for (var k in windowHeaders) {
-        					if (windowHeaders.hasOwnProperty(k)) {
-        						var key = k.replace(/@/gi,'@a').replace(/,/gi,'@c').replace(/=/gi,'@e');
-        						var value = windowHeaders[k].toString().replace(/@/gi,'@a').replace(/,/gi,'@c').replace(/=/gi,'@e');
-        						if (first) {
-        							first = false;
-        						} else  {
-        							strWindowHeaders += ",";
-        						}
-        						strWindowHeaders += key + "=" + value;
-        					}
-        				}
-        			}
-        		}
-
         strWindowFeatures = strWindowFeatures || '';
 
-        exec(cb, cb, 'InAppBrowser', 'open', [strUrl, strWindowName, strWindowFeatures, strWindowHeaders]);
+        exec(cb, cb, 'InAppBrowser', 'open', [strUrl, strWindowName, strWindowFeatures, headers]);
         return iab;
     };
 })();
