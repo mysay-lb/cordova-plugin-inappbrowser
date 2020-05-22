@@ -70,7 +70,7 @@
 @property (nonatomic) NSURL* currentURL;
 
 - (void)close;
-- (void)navigateTo:(NSURL*)url httpHeaderField:(NSString *)httpHeaderField httpHeaderValue:(NSString *)httpHeaderValue;
+- (void)navigateTo:(NSURL*)url headers:(NSDictionary *)headers;
 - (void)showLocationBar:(BOOL)show;
 - (void)showToolBar:(BOOL)show : (NSString *) toolbarPosition;
 - (void)setCloseButtonTitle:(NSString*)title : (NSString*) colorString : (int) buttonIndex;

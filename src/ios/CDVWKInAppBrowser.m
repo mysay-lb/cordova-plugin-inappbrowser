@@ -96,12 +96,10 @@ static CDVWKInAppBrowser* instance = nil;
     NSString* target = [command argumentAtIndex:1 withDefault:kInAppBrowserTargetSelf];
     NSString* options = [command argumentAtIndex:2 withDefault:@"" andClass:[NSString class]];
     
-    NSDictionary *headerDictionary = [command argumentAtIndex:3];
-    NSString *httpHeaderField;
-    NSString *httpHeaderValue;
-    if (headerDictionary && headerDictionary.allKeys.count > 0){
-        httpHeaderField = headerDictionary.allKeys[0];
-        httpHeaderValue = [headerDictionary objectForKey:httpHeaderField];
+    NSArray* headers = [command argumentAtIndex:3];
+    NSDictionary *headersDict;
+    if ([headers isKindOfClass:[NSArray class]] && headers.count > 0){
+        headersDict = headers[0];
     }
 
     self.callbackId = command.callbackId;
@@ -119,7 +117,7 @@ static CDVWKInAppBrowser* instance = nil;
         } else if ([target isEqualToString:kInAppBrowserTargetSystem]) {
             [self openInSystem:absoluteUrl];
         } else { // _blank or anything else
-            [self openInInAppBrowser:absoluteUrl withOptions:options httpHeaderField:httpHeaderField httpHeaderValue:httpHeaderValue];
+            [self openInInAppBrowser:absoluteUrl withOptions:options headers:headersDict];
         }
 
         pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
@@ -131,7 +129,7 @@ static CDVWKInAppBrowser* instance = nil;
     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
-- (void)openInInAppBrowser:(NSURL*)url withOptions:(NSString*)options httpHeaderField:(NSString *)httpHeaderField httpHeaderValue:(NSString *)httpHeaderValue
+- (void)openInInAppBrowser:(NSURL*)url withOptions:(NSString*)options headers:(NSDictionary *)headers
 {
     CDVInAppBrowserOptions* browserOptions = [CDVInAppBrowserOptions parseOptions:options];
 
@@ -264,7 +262,7 @@ static CDVWKInAppBrowser* instance = nil;
     }
     _waitForBeforeload = ![_beforeload isEqualToString:@""];
 
-    [self.inAppBrowserViewController navigateTo:url httpHeaderField:httpHeaderField httpHeaderValue:httpHeaderValue];
+    [self.inAppBrowserViewController navigateTo:url headers:headers];
     if (!browserOptions.hidden) {
         [self show:nil withNoAnimate:browserOptions.hidden];
     }
@@ -391,7 +389,7 @@ static CDVWKInAppBrowser* instance = nil;
     NSURL* url = [NSURL URLWithString:urlStr];
     //_beforeload = @"";
     _waitForBeforeload = NO;
-    [self.inAppBrowserViewController navigateTo:url httpHeaderField:nil httpHeaderValue:nil];
+    [self.inAppBrowserViewController navigateTo:url headers:nil];
 }
 
 // This is a helper method for the inject{Script|Style}{Code|File} API calls, which
@@ -1089,15 +1087,16 @@ BOOL isExiting = FALSE;
     });
 }
 
-- (void)navigateTo:(NSURL*)url httpHeaderField:(NSString *)httpHeaderField httpHeaderValue:(NSString *)httpHeaderValue
+- (void)navigateTo:(NSURL*)url headers:(NSDictionary *)headers
 {
     if ([url.scheme isEqualToString:@"file"]) {
         [self.webView loadFileURL:url allowingReadAccessToURL:url];
     } else {
         NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
 
-        if (httpHeaderField && httpHeaderValue){
-            [request setValue:httpHeaderValue forHTTPHeaderField:httpHeaderField];
+        for (NSString *key in headers.allKeys){
+            NSString *value = [headers objectForKey:key];
+            [request addValue:value forHTTPHeaderField:key];
         }
 
         [self.webView loadRequest:request];
